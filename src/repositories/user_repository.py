@@ -16,3 +16,11 @@ class UserRepository:
     # Equivalent to findByEmail(String email)
     def find_by_email(self, email: str) -> User | None:
         return self.db.query(User).filter(User.email == email).first()
+
+    def find_by_username(self, username: str) -> User | None:
+        return self.db.query(User).filter(User.username == username).first()
+
+    def find_by_identifier(self, identifier: str) -> User | None:
+        return self.db.query(User).filter(
+            (User.email == identifier) | (User.username == identifier)
+        ).first()

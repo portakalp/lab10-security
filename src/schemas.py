@@ -1,15 +1,25 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator, Field
 
-# Equivalent to DTOs (Data Transfer Objects) in Spring
-class UserCreateDTO(BaseModel):
+# Updated DTO with validation
+class UserCreate(BaseModel):
     username: str
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(..., min_length=8)
 
-class UserResponseDTO(BaseModel):
+    @field_validator('username')
+    def username_must_not_be_admin(cls, v):
+        if "admin" in v.lower():
+            raise ValueError('Username cannot be "admin"')
+        return v
+
+class UserResponse(BaseModel):
     id: int
     username: str
-    email: str
+    email: EmailStr
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
