@@ -13,13 +13,10 @@ import {
   Terminal,
   ChevronRight,
   Loader2,
-  Shield,
-  Activity,
   Lock,
   Trophy,
 } from "lucide-react"
-
-const API_BASE_URL = "http://127.0.0.1:8000"
+import { apiFetch } from "../lib/api"
 
 type View = "login" | "register" | "dashboard"
 type Tab = "dashboard" | "profile" | "leaderboard" | "machines" | "academics"
@@ -122,11 +119,7 @@ export default function TacticalSecurityApp() {
 
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      const response = await apiFetch("/auth/me")
 
       if (response.ok) {
         const data = await response.json()
@@ -165,11 +158,7 @@ export default function TacticalSecurityApp() {
     
     setIsLoading(true)
     try {
-        const response = await fetch(`${API_BASE_URL}/leaderboard`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        })
+        const response = await apiFetch("/leaderboard")
         
         if (response.ok) {
             const data = await response.json()
@@ -198,12 +187,15 @@ export default function TacticalSecurityApp() {
         formData.append("username", loginForm.username)
         formData.append("password", loginForm.password)
 
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        const response = await apiFetch("/auth/login", {
             method: "POST",
             body: formData,
         })
 
         if (!response.ok) {
+             if (response.status === 429) {
+                 throw new Error("Too many login attempts. Please try again later.")
+             }
             throw new Error("Login failed")
         }
 
@@ -222,8 +214,8 @@ export default function TacticalSecurityApp() {
             },
           ])
         }, 500)
-    } catch (err) {
-        setError("AUTHENTICATION FAILED")
+    } catch (err: any) {
+        setError(err.message || "AUTHENTICATION FAILED")
     } finally {
         setIsLoading(false)
     }
@@ -235,9 +227,8 @@ export default function TacticalSecurityApp() {
     setError("")
 
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        const response = await apiFetch("/auth/register", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(registerForm),
         })
 
@@ -263,14 +254,8 @@ export default function TacticalSecurityApp() {
     setTestResponse(null)
     addLog("root@user: curl -X GET /hello")
     
-    const token = localStorage.getItem("jwt_token")
-
     try {
-        const response = await fetch(`${API_BASE_URL}/hello`, {
-             headers: {
-                Authorization: `Bearer ${token}`
-            }
-        })
+        const response = await apiFetch("/hello")
         
         const data = await response.json()
         
@@ -285,7 +270,13 @@ export default function TacticalSecurityApp() {
     }
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+        await apiFetch("/auth/logout", { method: "POST" })
+    } catch (e) {
+        console.error("Logout error", e)
+    }
+    
     localStorage.removeItem("jwt_token")
     setView("login")
     setActivityLogs([])

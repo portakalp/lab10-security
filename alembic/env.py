@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 # Import the Base and the User model
 from src.database import Base, DATABASE_URL
-from src.models.user import User
+from src.models import User, RefreshToken
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
